@@ -167,9 +167,9 @@ public class App
 
 		System.out.println(" ** sending email to " + strings[1] + " " + strings[2] + " <" + strings[0] + ">");
 		
-//		try {
-//			Thread.sleep(500);
-//		} catch (InterruptedException ignore) {}
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException ignore) {}
 	}
 
 }
