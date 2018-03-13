@@ -68,36 +68,22 @@ public class App
 					.filter(string -> !string.isEmpty())	// remove empty ones
 					.filter(string -> !string.equals("\""))	// remove ["]
 					.filter(string -> !string.equals("\r"))	// remove [carriage return]
-					.subscribe( new Observer<String>() {	// do the processing
-
-						@Override
-						public void onCompleted() {
-							
-							System.out.println( "  ** Done!" );
-						}
-
-						@Override
-						public void onError(Throwable e) {
-							
-							System.err.println( "  ** error: " +  e.getMessage() );
-						}
-
-						@Override
-						public void onNext(String t) {
-							
-							// collect characters
-							if( ";\n".contains(t) && collected.length() > 0 ) {
-								
-								// store string and reset buffer
-								storeString(collected.toString());								
-								collected.setLength(0);								
-							}								
-							else {
-								collected.append(t);
-							}
-						}
-						
-					});
+					.subscribe( 
+							t ->  {						
+									// collect characters
+									if( ";\n".contains(t) && collected.length() > 0 ) {
+										
+										// store string and reset buffer
+										storeString(collected.toString());								
+										collected.setLength(0);								
+									}								
+									else {
+										collected.append(t);
+									}
+							},
+							e -> System.err.println( "  ** error: " +  e.getMessage() ),
+							() -> System.out.println( "  ** Done!" )
+					);
 
 			} catch (FileNotFoundException e) {
 				
@@ -134,16 +120,13 @@ public class App
 			try {
 				BufferedReader bufferedReader = new BufferedReader(new FileReader(args[1]), bufferSize);
 				
-				bufferedReader.lines().forEach(new Consumer<String>() {
-
-					@Override
-					public void accept(String s) {
-
-						String[] splitted = s.replaceAll("[\"]", "").split("[;]");
-						
+				bufferedReader.lines().forEach(
+					s -> {
+						// split and use to send
+						String[] splitted = s.replaceAll("[\"]", "").split("[;]");						
 						sendMail( splitted );
 					}
-				});
+				);
 				
 				bufferedReader.close();				
 			} catch (Exception e) {
