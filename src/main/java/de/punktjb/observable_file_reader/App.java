@@ -2,7 +2,6 @@ package de.punktjb.observable_file_reader;
 
 
 import rx.Observable;
-import rx.Observer;
 import rx.Subscriber;
 
 import java.io.FileReader;
@@ -53,7 +52,7 @@ public class App
 		{
 			Observable<char[]> fileContent = null;
 			
-			final StringBuilder collected = new StringBuilder();
+//			final StringBuilder collected = new StringBuilder();
 			
 			// input titles
 			try {
@@ -79,28 +78,32 @@ public class App
 								
 				                @Override
 				                public void onCompleted() {
-				                	// push last content 
-				                	if( collected.length() > 0 )
-				                		child.onNext(collected.toString());	
 				                	
-				                	// and complete
+				                		// push last content 
+				                		if( collected.length() > 0 )
+				                			child.onNext(collected.toString());	
+				                	
+				                		// and complete
 				                    child.onCompleted();
 				                }
+				                
 				                @Override
 				                public void onError(Throwable e) {
+				                	
 				                    child.onError(e);
 				                }
+				                
 				                @Override
 				                public void onNext(String t) {
 				                	
-				                	// onNext or collect and request new
-				                	if( ";\n".contains(t) && collected.length() > 0 ) {
-				                		child.onNext(collected.toString());								
+									// onNext or collect and request new
+									if( ";\n".contains(t) && collected.length() > 0 ) {
+										child.onNext(collected.toString());								
 										collected.setLength(0);
-				                    } else {
-				                    	collected.append(t);
-				                    	request(1);
-				                    }
+									} else {
+										collected.append(t);
+										request(1);
+									}
 				                }
 				            };
 						}						
