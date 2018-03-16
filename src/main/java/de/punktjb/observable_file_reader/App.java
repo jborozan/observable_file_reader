@@ -1,9 +1,9 @@
 package de.punktjb.observable_file_reader;
 
-import java.util.function.Consumer;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 
 import java.io.FileReader;
 import java.io.BufferedReader;
@@ -68,22 +68,64 @@ public class App
 					.filter(string -> !string.isEmpty())	// remove empty ones
 					.filter(string -> !string.equals("\""))	// remove ["]
 					.filter(string -> !string.equals("\r"))	// remove [carriage return]
-					.subscribe( 
-							t ->  {						
-									// collect characters
-									if( ";\n".contains(t) && collected.length() > 0 ) {
-										
-										// store string and reset buffer
-										storeString(collected.toString());								
-										collected.setLength(0);								
-									}								
-									else {
-										collected.append(t);
-									}
-							},
+					.lift( new Observable.Operator<String, String>() {	// using custom operator to collect characters to string
+
+						@Override
+						public Subscriber<? super String> call(Subscriber<? super String> child) {
+							
+							return new Subscriber<String>(child) {
+								
+								final StringBuilder collected = new StringBuilder();
+								
+				                @Override
+				                public void onCompleted() {
+				                	// push last content 
+				                	if( collected.length() > 0 )
+				                		child.onNext(collected.toString());	
+				                	
+				                	// and complete
+				                    child.onCompleted();
+				                }
+				                @Override
+				                public void onError(Throwable e) {
+				                    child.onError(e);
+				                }
+				                @Override
+				                public void onNext(String t) {
+				                	
+				                	// onNext or collect and request new
+				                	if( ";\n".contains(t) && collected.length() > 0 ) {
+				                		child.onNext(collected.toString());								
+										collected.setLength(0);
+				                    } else {
+				                    	collected.append(t);
+				                    	request(1);
+				                    }
+				                }
+				            };
+						}						
+					})
+					.subscribe(
+							t -> storeString( t ),
 							e -> System.err.println( "  ** error: " +  e.getMessage() ),
 							() -> System.out.println( "  ** Done!" )
-					);
+							);
+//					.subscribe( 
+//							t ->  {						
+//									// collect characters
+//									if( ";\n".contains(t) && collected.length() > 0 ) {
+//										
+//										// store string and reset buffer
+//										storeString(collected.toString());								
+//										collected.setLength(0);								
+//									}								
+//									else {
+//										collected.append(t);
+//									}
+//							},
+//							e -> System.err.println( "  ** error: " +  e.getMessage() ),
+//							() -> System.out.println( "  ** Done!" )
+//					);
 
 			} catch (FileNotFoundException e) {
 				
@@ -97,7 +139,7 @@ public class App
 		
 		return;
     }
-    
+		
     protected void storeString(final String string) {
 
     	groupOfStrings[cnt%groupSize] = string;
@@ -150,9 +192,9 @@ public class App
 
 		System.out.println(" ** sending email to " + strings[1] + " " + strings[2] + " <" + strings[0] + ">");
 		
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException ignore) {}
+//		try {
+//			Thread.sleep(500);
+//		} catch (InterruptedException ignore) {}
 	}
 
 }
